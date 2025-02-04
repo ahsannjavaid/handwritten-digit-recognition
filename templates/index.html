@@ -1,19 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Handwritten Digit Recognition</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Recognition</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Upload a Handwritten Digit Image</h2>
-    <form action="/" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Predict</button>
-    </form>
+    <div class="container">
+        <h1>Handwritten Digit Recognition ✍️</h1>
+        <form action="/" method="post" enctype="multipart/form-data">
+            <label for="file-upload" class="custom-file-upload">
+                📤 Upload a Digit Image
+            </label>
+            <input id="file-upload" type="file" name="file" required>
+            <button type="submit">🔍 Predict</button>
+        </form>
 
-    {% if filename %}
-        <h3>Uploaded Image:</h3>
-        <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="{{ filename }}" width="150">
-        <h3>Predicted Digit: {{ prediction }}</h3>
-    {% endif %}
+        {% if filename %}
+        <div class="result">
+            <h3>Uploaded Image:</h3>
+            <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="{{ filename }}" class="uploaded-img">
+            <h2 class="prediction">Predicted Digit: <span>{{ prediction }}</span></h2>
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>
