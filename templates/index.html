@@ -5,32 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digit Recognition</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>Handwritten Digit Recognition ✍️</h1>
-        
-        <form action="/" method="post" enctype="multipart/form-data">
-            <!-- Preview Image (Before Clicking Predict) -->
-            <div id="preview-container" style="display: none;">
+
+        <form action="/" method="post" enctype="multipart/form-data" class="upload-form">
+            <!-- Preview Image -->
+            <div id="preview-container" class="preview-container" style="display: none;">
                 <img id="preview-img" class="uploaded-img">
             </div>
-            <label for="file-upload" class="custom-file-upload">
-                📤 Upload a Digit Image
-            </label>
-            <input id="file-upload" type="file" name="file" required onchange="previewImage(event)">
-            <button type="submit">🔍 Predict</button>
+            
+            <div class="upload-section">
+                <label for="file-upload" class="custom-file-upload">
+                    📤 Upload a Digit Image
+                </label>
+                <input id="file-upload" type="file" name="file" onchange="previewImage(event)">
+            </div>
         </form>
+
+        <!-- Drawing Slate -->
+        <p>Or Draw a Digit Below 🎨</p>
+        <canvas id="drawing-board" width="200" height="200"></canvas>
+        <button onclick="clearCanvas()">🧹 Clear</button>
+        <br />
+        <!-- Single Predict Button -->
+        <button onclick="predict()">🔍 Predict</button>
 
         {% if filename %}
         <div class="result">
             <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="{{ filename }}" class="uploaded-img">
-            <h2 class="prediction">Predicted Digit: <span>{{ prediction }}</span></h2>
+            <h2 class="prediction">Predicted Digit: <span id="drawn-prediction">{{ prediction }}</span></h2>
         </div>
         {% endif %}
     </div>
 
     <script>
+        let socket = io();
+        let canvas = document.getElementById('drawing-board');
+        let ctx = canvas.getContext('2d');
+        let drawing = false;
+
         function previewImage(event) {
             let previewContainer = document.getElementById('preview-container');
             let previewImg = document.getElementById('preview-img');
@@ -45,6 +61,53 @@
                 reader.readAsDataURL(file);
             }
         }
+
+        function startDrawing(e) {
+            drawing = true;
+            draw(e);
+        }
+
+        function stopDrawing() {
+            drawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'black';
+
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById("drawn-prediction").innerText = "_";
+        }
+
+        function predict() {
+            let fileInput = document.getElementById("file-upload");
+            let file = fileInput.files[0];
+
+            if (file) {
+                document.forms[0].submit(); // If an image is uploaded, submit form
+            } else {
+                let imageData = canvas.toDataURL('image/png');
+                socket.emit('canvas_data', imageData); // Otherwise, send drawn canvas for prediction
+            }
+        }
+
+        socket.on('prediction_result', function(data) {
+            document.getElementById("drawn-prediction").innerText = data.prediction;
+        });
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mousemove', draw);
     </script>
 </body>
 </html>
