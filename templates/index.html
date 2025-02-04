@@ -26,16 +26,17 @@
         </form>
 
         <!-- Drawing Slate -->
-        <p>Or Draw a Digit Below 🎨</p>
+        <h3>Or Draw a Digit Below 🎨</h3>
         <canvas id="drawing-board" width="200" height="200"></canvas>
         <button onclick="clearCanvas()">🧹 Clear</button>
-        <br />
+        <button onclick="downloadCanvas()">📥 Download</button>
+
         <!-- Single Predict Button -->
         <button onclick="predict()">🔍 Predict</button>
 
         {% if filename %}
         <div class="result">
-            <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="{{ filename }}" class="uploaded-img">
+            <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="{{ filename }}" id="drawn-preview-img" class="uploaded-img">
             <h2 class="prediction">Predicted Digit: <span id="drawn-prediction">{{ prediction }}</span></h2>
         </div>
         {% endif %}
@@ -87,6 +88,14 @@
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             document.getElementById("drawn-prediction").innerText = "_";
+            document.getElementById("drawn-preview-container").style.display = "none";
+        }
+
+        function downloadCanvas() {
+            let link = document.createElement('a');
+            link.download = 'drawn_digit.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
         function predict() {
@@ -98,6 +107,12 @@
             } else {
                 let imageData = canvas.toDataURL('image/png');
                 socket.emit('canvas_data', imageData); // Otherwise, send drawn canvas for prediction
+                
+                // Show drawn image preview
+                let drawnPreviewContainer = document.getElementById("drawn-preview-container");
+                let drawnPreviewImg = document.getElementById("drawn-preview-img");
+                drawnPreviewImg.src = imageData;
+                drawnPreviewContainer.style.display = "block";
             }
         }
 

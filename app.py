@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, send_from_directory
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -50,11 +50,20 @@ def handle_canvas(data):
     image_data = data.replace("data:image/png;base64,", "")
     image = Image.open(BytesIO(base64.b64decode(image_data)))
 
+    # Save drawn image
+    drawn_image_path = os.path.join(app.config['UPLOAD_FOLDER'], "drawn_digit.png")
+    image.save(drawn_image_path)
+
     processed_image = preprocess_image(image)
     prediction = model.predict(processed_image)
     predicted_digit = int(np.argmax(prediction))
 
     socketio.emit('prediction_result', {'prediction': predicted_digit})
+
+@app.route('/static/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve uploaded or drawn images."""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
