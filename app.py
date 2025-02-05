@@ -13,7 +13,9 @@ app = Flask(__name__)
 socketio = SocketIO(app, async_mode='eventlet')
 
 # Load trained model
-model = tf.keras.models.load_model('digit_recognition_model.h5')
+# model_name = 'digit_recognition_model.h5'
+model_name = 'cnn_digit_recognition.h5'
+model = tf.keras.models.load_model(model_name)
 
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -21,6 +23,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def preprocess_image(image):
     """Preprocess the image for prediction."""
+    if image.mode == 'RGBA':
+        # Giving canvas image the white BG since it is transparent
+        white_bg = Image.new("RGBA", image.size, (255, 255, 255, 255))
+        
+        # Paste the original image on the white background
+        white_bg.paste(image, (0, 0), image)
+        image = white_bg
+        
     image = image.convert('L')  # Convert to grayscale
     image = image.resize((28, 28))  # Resize to 28x28
     image = np.array(image) / 255.0  # Normalize
